@@ -33,6 +33,7 @@ import JumpNav from './JumpNav';
 import DeleteAccount from './delete-account';
 import EditableField from './EditableField';
 import EditableSelectField from './EditableSelectField';
+// import EditableRadioSet from './EditableRadioSet';
 import ResetPassword from './reset-password';
 import NameChange from './name-change';
 import ThirdPartyAuth from './third-party-auth';
@@ -48,6 +49,9 @@ import {
   COPPA_COMPLIANCE_YEAR,
   WORK_EXPERIENCE_OPTIONS,
   getStatesList,
+  getCountryMarkets,
+  SUBSCRIBE_JOBS,
+  REGION_MARKETS_MAP,
 } from './data/constants';
 import { fetchSiteLanguages } from './site-language';
 import DemographicsSection from './demographics/DemographicsSection';
@@ -56,8 +60,9 @@ import { withLocation, withNavigate } from './hoc';
 
 // Get custom messages from Gymnasium JSON
 const getMsg = () => getConfig().GYM_MSG;
+// const getMarkets = () => getConfig().GYM_MARKETS;
 
-import {Intercom, boot, update } from "@intercom/messenger-js-sdk";
+import { Intercom, boot, update } from "@intercom/messenger-js-sdk";
 
 const INTERCOM_APP_ID = () => getConfig().INTERCOM_APP_ID;
 
@@ -155,9 +160,16 @@ class AccountSettingsPage extends React.Component {
       value: key,
       label: key === '' ? this.props.intl.formatMessage(messages['account.settings.field.work.experience.options.empty']) : key,
     })),
+    marketOptions: [{
+      value: '',
+      label: 'Please choose',
+    }].concat(getCountryMarkets(country)),
   }));
 
+  //
+
   handleEditableFieldChange = (name, value) => {
+    console.log(`handleEditableFieldChange:`, name, value);
     this.props.updateDraft(name, value);
   };
 
@@ -165,13 +177,43 @@ class AccountSettingsPage extends React.Component {
     const { formValues } = this.props;
     let extendedProfileObject = {};
 
+    console.log(`submitted field: `, formId, values);
+
     if ('extended_profile' in formValues && formValues.extended_profile.some((field) => field.field_name === formId)) {
       extendedProfileObject = {
-        extended_profile: formValues.extended_profile.map(field => (field.field_name === formId
+        extended_profile: formValues.extended_profile.map(field => {
+
+          console.log(`extended_profile field name/value: `, field, field.value);
+          return (field.field_name === formId
           ? { ...field, field_value: values }
-          : field)),
+          : field)
+        }),
       };
     }
+
+    // If the country doesn't have a markets, reset the market field
+    // if (formId === 'country') {
+    //   if (!REGION_MARKETS_MAP[values] && 'extended_profile' in formValues && formValues.extended_profile.some((field) => field.field_name === 'market')) {
+
+    //     // extendedProfileObject = {
+    //     //   extended_profile: formValues.extended_profile.map(field => {
+    //     //     if (field.field_name === 'market') {
+    //     //       console.log(`resetting market`);
+    //     //       return { ...field, field_value: null }
+    //     //     } else if (field.field_name === 'subscribe_jobs') {
+    //     //       return { ...field, field_value: false }
+    //     //     } else {
+    //     //       return field;
+    //     //     }
+    //     //   }),
+    //     // };
+    //     this.props.saveSettings(formId, values);
+    //     this.props.saveSettings('market', null);
+    //     this.props.saveSettings('subscribe_jobs', false);
+    //   }
+      
+    // }
+
     this.props.saveSettings(formId, values, extendedProfileObject);
   };
 
@@ -493,6 +535,7 @@ class AccountSettingsPage extends React.Component {
       educationLevelOptions,
       genderOptions,
       workExperienceOptions,
+      marketOptions,
     } = this.getLocalizedOptions(this.context.locale, this.props.formValues.country);
 
     // Show State field only if the country is US (could include Canada later)
@@ -500,6 +543,12 @@ class AccountSettingsPage extends React.Component {
     const { verifiedName } = this.props;
 
     const hasWorkExperience = !!this.props.formValues?.extended_profile?.find(field => field.field_name === 'work_experience');
+
+    // show market field only when subscribe_jobs is set to true
+    const showMarket = !!this.props.formValues?.extended_profile?.find(field => field.field_name === 'subscribe_jobs' && field.field_value === 'true');
+
+    // show subscribe to jobs only when some countries are selected.
+    const subscribeJobs = this.props.formValues?.extended_profile?.find(field => field.field_name === 'subscribe_jobs') && REGION_MARKETS_MAP[this.props.formValues.country];
 
     const timeZoneOptions = this.getLocalizedTimeZoneOptions(
       this.props.timeZoneOptions,
@@ -681,6 +730,40 @@ class AccountSettingsPage extends React.Component {
               {...editableFieldProps}
             />
             )}
+
+          {subscribeJobs
+            && (
+              <div>
+                <p>If you are eligible to work in your country, consider subscribing to job opportunity emails.</p>
+                {console.log(`subscribe_jobs:`, this.props.formValues?.extended_profile?.find(field => field.field_name === 'subscribe_jobs')?.field_value)}
+                <EditableSelectField
+                  name="subscribe_jobs"
+                  type="select"
+                  value={this.props.formValues?.extended_profile?.find(field => field.field_name === 'subscribe_jobs')?.field_value}
+                  options={SUBSCRIBE_JOBS}
+                  label={'Subscribe to job emails?'}
+                  emptyLabel={this.props.formValues?.extended_profile?.find(field => field.field_name === 'subscribe_jobs')?.field_name}
+                  isEditable={true}
+                  isInline
+                  {...editableFieldProps}
+                />
+
+                {showMarket
+                  && (
+                  <EditableSelectField
+                    name="market"
+                    type="select"
+                    value={this.props.formValues?.extended_profile?.find(field => field.field_name === 'market')?.field_value}
+                    options={marketOptions}
+                    label={'Nearest Aquent Office'}
+                    emptyLabel={'Choose the Aquent office closest to you.'}
+                    {...editableFieldProps}
+                  />
+                )}
+              </div>
+            )
+          }
+
         </div>
 
         <div className="account-section pt-3 mb-5" id="profile-information" ref={this.navLinkRefs['#profile-information']}>
@@ -819,7 +902,7 @@ class AccountSettingsPage extends React.Component {
             />
           </div>
           )}
-        
+
         {/* Custom account deletion message */}
         {getMsg()['mfe']['account']['deletion'] && (
           <div className="account-section pt-3 mb-5" id="custom-delete-account" ref={this.navLinkRefs['#custom-delete-account']}>
@@ -855,6 +938,8 @@ class AccountSettingsPage extends React.Component {
       loadingError,
     } = this.props;
 
+    console.log(`this.context:`, this.context.authenticatedUser)
+
     if (INTERCOM_APP_ID()) {
       try {
         Intercom({app_id: INTERCOM_APP_ID()});
@@ -862,6 +947,8 @@ class AccountSettingsPage extends React.Component {
         const INTERCOM_SETTINGS = {
           email: this.context.authenticatedUser.email,
           user_id: this.context.authenticatedUser.username,
+          // country: this.context.authenticatedUser.country,
+          // country: this.context.authenticatedUser.country,
         }
 
         update(INTERCOM_SETTINGS);
