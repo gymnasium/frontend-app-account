@@ -553,6 +553,8 @@ class AccountSettingsPage extends React.Component {
     // show subscribe to jobs only when some countries are selected.
     const subscribeJobs = this.props.formValues?.extended_profile?.find(field => field.field_name === 'subscribe_jobs') && REGION_MARKETS_MAP[this.props.formValues.country];
 
+    const subscribeJobsValue = this.props.formValues?.extended_profile?.find(field => field.field_name === 'subscribe_jobs').field_value;
+
     const timeZoneOptions = this.getLocalizedTimeZoneOptions(
       this.props.timeZoneOptions,
       this.props.countryTimeZoneOptions,
@@ -721,18 +723,31 @@ class AccountSettingsPage extends React.Component {
             && (
               <div>
                 <p>If you are eligible to work in your country, consider subscribing to job opportunity emails.</p>
-                {/* {console.log(`subscribe_jobs:`, this.props.formValues?.extended_profile?.find(field => field.field_name === 'subscribe_jobs')?.field_value)} */}
                 <EditableSelectField
                   name="subscribe_jobs"
                   type="select"
                   value={this.props.formValues?.extended_profile?.find(field => field.field_name === 'subscribe_jobs')?.field_value}
                   options={SUBSCRIBE_JOBS}
                   label={'Subscribe to job emails?'}
-                  emptyLabel={this.props.formValues?.extended_profile?.find(field => field.field_name === 'subscribe_jobs')?.field_name}
+                  emptyLabel={'Please choose'}
                   isEditable={true}
                   isInline
                   {...editableFieldProps}
                 />
+
+                {showMarket
+                  && (
+                  <EditableField
+                    name="city"
+                    type="text"
+                    value={this.props.formValues?.extended_profile?.find(field => field.field_name === 'city')?.field_value}
+                    label={'City'}
+                    emptyLabel={'Please enter your city'}
+                    helpText={''}
+                    isEditable={true}
+                    {...editableFieldProps}
+                  />
+                )}
 
                 {showMarket && showState
                   && (
@@ -750,20 +765,20 @@ class AccountSettingsPage extends React.Component {
                     isEditable={this.isEditable('state')}
                     {...editableFieldProps}
                   />
-                  )}
+                )}
 
                 {showMarket
                   && (
                   <EditableField
-                  name="zip_postal"
-                  type="text"
-                  value={this.props.formValues?.extended_profile?.find(field => field.field_name === 'zip_postal')?.field_value}
-                  label={'Postal/Zip Code'}
-                  emptyLabel={'Please enter your Postal/Zip Code'}
-                  helpText={''}
-                  isEditable={true}
-                  {...editableFieldProps}
-                />
+                    name="zip_postal"
+                    type="text"
+                    value={this.props.formValues?.extended_profile?.find(field => field.field_name === 'zip_postal')?.field_value}
+                    label={'Postal/Zip Code'}
+                    emptyLabel={'Please enter your Postal/Zip Code'}
+                    helpText={''}
+                    isEditable={true}
+                    {...editableFieldProps}
+                  />
                 )}
 
                 {showMarket
@@ -1027,6 +1042,7 @@ AccountSettingsPage.propTypes = {
     social_link_facebook: PropTypes.string,
     social_link_twitter: PropTypes.string,
     time_zone: PropTypes.string,
+    city: PropTypes.string,
     state: PropTypes.string,
     shouldDisplayDemographicsSection: PropTypes.bool,
     useVerifiedNameForCerts: PropTypes.bool.isRequired,
