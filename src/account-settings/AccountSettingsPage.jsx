@@ -716,23 +716,6 @@ class AccountSettingsPage extends React.Component {
             isEditable={this.isEditable('country')}
             {...editableFieldProps}
           />
-          {showState
-            && (
-            <EditableSelectField
-              name="state"
-              type="select"
-              value={this.props.formValues?.extended_profile?.find(field => field.field_name === 'state')?.field_value}
-              options={stateOptions}
-              label={this.props.intl.formatMessage(messages['account.settings.field.state'])}
-              emptyLabel={
-                this.isEditable('state')
-                  ? this.props.intl.formatMessage(messages['account.settings.field.state.empty'])
-                  : this.renderEmptyStaticFieldMessage()
-              }
-              isEditable={this.isEditable('state')}
-              {...editableFieldProps}
-            />
-            )}
 
           {subscribeJobs
             && (
@@ -750,6 +733,38 @@ class AccountSettingsPage extends React.Component {
                   isInline
                   {...editableFieldProps}
                 />
+
+                {showMarket && showState
+                  && (
+                  <EditableSelectField
+                    name="state"
+                    type="select"
+                    value={this.props.formValues?.extended_profile?.find(field => field.field_name === 'state')?.field_value}
+                    options={stateOptions}
+                    label={this.props.intl.formatMessage(messages['account.settings.field.state'])}
+                    emptyLabel={
+                      this.isEditable('state')
+                        ? this.props.intl.formatMessage(messages['account.settings.field.state.empty'])
+                        : this.renderEmptyStaticFieldMessage()
+                    }
+                    isEditable={this.isEditable('state')}
+                    {...editableFieldProps}
+                  />
+                  )}
+
+                {showMarket
+                  && (
+                  <EditableField
+                  name="zip_postal"
+                  type="text"
+                  value={this.props.formValues?.extended_profile?.find(field => field.field_name === 'zip_postal')?.field_value}
+                  label={'Postal/Zip Code'}
+                  emptyLabel={'Please enter your Postal/Zip Code'}
+                  helpText={''}
+                  isEditable={true}
+                  {...editableFieldProps}
+                />
+                )}
 
                 {showMarket
                   && (
