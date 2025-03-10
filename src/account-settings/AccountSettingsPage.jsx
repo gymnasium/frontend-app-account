@@ -46,6 +46,7 @@ import {
   EDUCATION_LEVELS,
   GENDER_OPTIONS,
   COUNTRY_WITH_STATES,
+  COUNTRY_STATES_MAP,
   COPPA_COMPLIANCE_YEAR,
   WORK_EXPERIENCE_OPTIONS,
   getStatesList,
@@ -60,11 +61,15 @@ import { withLocation, withNavigate } from './hoc';
 
 // Get custom messages from Gymnasium JSON
 const getMsg = () => getConfig().GYM_MSG;
-// const getMarkets = () => getConfig().GYM_MARKETS;
+const getMarkets = () => getConfig().GYM_MARKETS;
+
+console.log(getMarkets());
 
 import { Intercom, boot, update } from "@intercom/messenger-js-sdk";
 
 const INTERCOM_APP_ID = () => getConfig().INTERCOM_APP_ID;
+
+// const [userLocation, setUserLocation] = useState(null);
 
 class AccountSettingsPage extends React.Component {
   constructor(props, context) {
@@ -166,8 +171,6 @@ class AccountSettingsPage extends React.Component {
     }].concat(getCountryMarkets(country)),
   }));
 
-  //
-
   handleEditableFieldChange = (name, value) => {
     console.log(`handleEditableFieldChange:`, name, value);
     this.props.updateDraft(name, value);
@@ -177,13 +180,13 @@ class AccountSettingsPage extends React.Component {
     const { formValues } = this.props;
     let extendedProfileObject = {};
 
-    console.log(`submitted field: `, formId, values);
+    // console.log(`submitted field: `, formId, values);
 
     if ('extended_profile' in formValues && formValues.extended_profile.some((field) => field.field_name === formId)) {
       extendedProfileObject = {
         extended_profile: formValues.extended_profile.map(field => {
 
-          console.log(`extended_profile field name/value: `, field, field.value);
+          // console.log(`extended_profile field name/value: `, field, field.value);
           return (field.field_name === formId
           ? { ...field, field_value: values }
           : field)
@@ -538,8 +541,8 @@ class AccountSettingsPage extends React.Component {
       marketOptions,
     } = this.getLocalizedOptions(this.context.locale, this.props.formValues.country);
 
-    // Show State field only if the country is US (could include Canada later)
-    const showState = this.props.formValues.country === COUNTRY_WITH_STATES;
+    // Show State field only if the countries are US & Canada
+    const showState = !!this.props.formValues.country && COUNTRY_STATES_MAP[this.props.formValues.country];
     const { verifiedName } = this.props;
 
     const hasWorkExperience = !!this.props.formValues?.extended_profile?.find(field => field.field_name === 'work_experience');
@@ -718,7 +721,7 @@ class AccountSettingsPage extends React.Component {
             <EditableSelectField
               name="state"
               type="select"
-              value={this.props.formValues.state}
+              value={this.props.formValues?.extended_profile?.find(field => field.field_name === 'state')?.field_value}
               options={stateOptions}
               label={this.props.intl.formatMessage(messages['account.settings.field.state'])}
               emptyLabel={
@@ -735,7 +738,7 @@ class AccountSettingsPage extends React.Component {
             && (
               <div>
                 <p>If you are eligible to work in your country, consider subscribing to job opportunity emails.</p>
-                {console.log(`subscribe_jobs:`, this.props.formValues?.extended_profile?.find(field => field.field_name === 'subscribe_jobs')?.field_value)}
+                {/* {console.log(`subscribe_jobs:`, this.props.formValues?.extended_profile?.find(field => field.field_name === 'subscribe_jobs')?.field_value)} */}
                 <EditableSelectField
                   name="subscribe_jobs"
                   type="select"
