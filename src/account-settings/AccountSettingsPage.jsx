@@ -63,7 +63,7 @@ import { withLocation, withNavigate } from './hoc';
 const getMsg = () => getConfig().GYM_MSG;
 const getMarkets = () => getConfig().GYM_MARKETS;
 
-console.log(getMarkets());
+// console.log(getMarkets());
 
 import { Intercom, boot, update } from "@intercom/messenger-js-sdk";
 
@@ -171,6 +171,7 @@ class AccountSettingsPage extends React.Component {
     }].concat(getCountryMarkets(country)),
   }));
 
+
   handleEditableFieldChange = (name, value) => {
     console.log(`handleEditableFieldChange:`, name, value);
     this.props.updateDraft(name, value);
@@ -180,13 +181,10 @@ class AccountSettingsPage extends React.Component {
     const { formValues } = this.props;
     let extendedProfileObject = {};
 
-    // console.log(`submitted field: `, formId, values);
-
     if ('extended_profile' in formValues && formValues.extended_profile.some((field) => field.field_name === formId)) {
+      
       extendedProfileObject = {
         extended_profile: formValues.extended_profile.map(field => {
-
-          // console.log(`extended_profile field name/value: `, field, field.value);
           return (field.field_name === formId
           ? { ...field, field_value: values }
           : field)
@@ -194,31 +192,42 @@ class AccountSettingsPage extends React.Component {
       };
     }
 
-    // If the country doesn't have a markets, reset the market field
-    // if (formId === 'country') {
-    //   if (!REGION_MARKETS_MAP[values] && 'extended_profile' in formValues && formValues.extended_profile.some((field) => field.field_name === 'market')) {
-
-    //     // extendedProfileObject = {
-    //     //   extended_profile: formValues.extended_profile.map(field => {
-    //     //     if (field.field_name === 'market') {
-    //     //       console.log(`resetting market`);
-    //     //       return { ...field, field_value: null }
-    //     //     } else if (field.field_name === 'subscribe_jobs') {
-    //     //       return { ...field, field_value: false }
-    //     //     } else {
-    //     //       return field;
-    //     //     }
-    //     //   }),
-    //     // };
-    //     this.props.saveSettings(formId, values);
-    //     this.props.saveSettings('market', null);
-    //     this.props.saveSettings('subscribe_jobs', false);
-    //   }
-      
-    // }
-
     this.props.saveSettings(formId, values, extendedProfileObject);
   };
+
+  handleCountrySubmit = (formId, values) => {
+    // store the currently saved country
+    const savedCountry = () => this.props.committedValues?.country;
+
+    const { formValues } = this.props;
+
+    let extendedProfileObject = {};
+
+    // check to to see if the currently saved country matches the newly chosen country & reset market, city, state, postal & subscribe_jobs accordingly
+    if ('extended_profile' in formValues && values !== savedCountry()) {
+      extendedProfileObject = {
+        extended_profile: formValues.extended_profile.map(field => {
+          if (
+              field.field_name === 'market' ||
+              field.field_name === 'city' ||
+              field.field_name === 'state' ||
+              field.field_name === 'zip_postal'
+            ) {
+            return { ...field, field_value: null }
+          } else if (field.field_name === 'subscribe_jobs') {
+            return { ...field, field_value: false }
+          } else {
+            return field;
+          }
+        }),
+      }
+      // save extended profile object updates
+      this.props.saveSettings(formId, values, extendedProfileObject);
+    }
+
+    // save country update
+    this.props.saveSettings(formId, values);
+  }
 
   handleSubmitProfileName = (formId, values) => {
     if (Object.keys(this.props.drafts).includes('useVerifiedNameForCerts')) {
@@ -716,7 +725,8 @@ class AccountSettingsPage extends React.Component {
                 : this.renderEmptyStaticFieldMessage()
             }
             isEditable={this.isEditable('country')}
-            {...editableFieldProps}
+            onChange={this.handleEditableFieldChange}
+            onSubmit={this.handleCountrySubmit}
           />
 
           {subscribeJobs
@@ -781,7 +791,7 @@ class AccountSettingsPage extends React.Component {
                   />
                 )}
 
-                {showMarket
+                {/* {showMarket
                   && (
                   <EditableSelectField
                     name="market"
@@ -792,7 +802,7 @@ class AccountSettingsPage extends React.Component {
                     emptyLabel={'Choose the Aquent office closest to you.'}
                     {...editableFieldProps}
                   />
-                )}
+                )} */}
               </div>
             )
           }
@@ -971,7 +981,7 @@ class AccountSettingsPage extends React.Component {
       loadingError,
     } = this.props;
 
-    console.log(`this.context:`, this.context.authenticatedUser)
+    // console.log(`this.context:`, this.context.authenticatedUser)
 
     if (INTERCOM_APP_ID()) {
       try {
